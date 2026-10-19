@@ -1,4 +1,5 @@
 using P3R.CostumeFramework.Costumes.Models;
+using IUnrealObjects = UE.Toolkit.Interfaces.IUnrealObjects;
 using Unreal.ObjectsEmitter.Interfaces;
 
 namespace P3R.CostumeFramework.Hooks.Services;
@@ -8,10 +9,10 @@ internal sealed class CostumeWeaponService
     private readonly BoolTable boolTable;
     private readonly PathTable pathTable;
 
-    public CostumeWeaponService(IDataTables dt, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
+    public CostumeWeaponService(IDataTables dt, IUnrealObjects objects, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
     {
-        this.boolTable = new BoolTable(dt, unreal, manager, hooks);
-        this.pathTable = new PathTable(dt, unreal, manager, hooks);
+        this.boolTable = new BoolTable(dt, objects, unreal, manager, hooks);
+        this.pathTable = new PathTable(dt, objects, unreal, manager, hooks);
     }
 
     private static string? ResolveWeaponMeshPath(Costume costume, string rowName)
@@ -37,8 +38,8 @@ internal sealed class CostumeWeaponService
 
     private sealed class BoolTable : PoseTableServiceBase
     {
-        public BoolTable(IDataTables dt, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
-            : base(dt, unreal, manager, hooks, "WeaponBool", "WeaponBool") { }
+        public BoolTable(IDataTables dt, IUnrealObjects objects, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
+            : base(dt, objects, unreal, manager, hooks, "WeaponBool", "WeaponBool") { }
 
         protected override string GetPoseValue(Costume costume, string rowName)
             => ResolveWeaponMeshPath(costume, rowName) != null ? "True" : "False";
@@ -46,8 +47,8 @@ internal sealed class CostumeWeaponService
 
     private sealed class PathTable : PoseTableServiceBase
     {
-        public PathTable(IDataTables dt, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
-            : base(dt, unreal, manager, hooks, "WeaponPath", "WeaponPath") { }
+        public PathTable(IDataTables dt, IUnrealObjects objects, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
+            : base(dt, objects, unreal, manager, hooks, "WeaponPath", "WeaponPath") { }
 
         protected override string? GetPoseValue(Costume costume, string rowName)
         {

@@ -1,12 +1,13 @@
 using P3R.CostumeFramework.Costumes.Models;
+using IUnrealObjects = UE.Toolkit.Interfaces.IUnrealObjects;
 using Unreal.ObjectsEmitter.Interfaces;
 
 namespace P3R.CostumeFramework.Hooks.Services;
 
 internal sealed class CostumeMontageService : PoseTableServiceBase
 {
-    public CostumeMontageService(IDataTables dt, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
-        : base(dt, unreal, manager, hooks, "Anim_Montage", "montage") { }
+    public CostumeMontageService(IDataTables dt, IUnrealObjects objects, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
+        : base(dt, objects, unreal, manager, hooks, "Anim_Montage", "montage") { }
 
     protected override string GetPoseValue(Costume costume, string rowName)
     {
@@ -33,8 +34,8 @@ internal sealed class CostumeMontageService : PoseTableServiceBase
 
 internal sealed class CostumeSceneMontageService : PoseTableServiceBase
 {
-    public CostumeSceneMontageService(IDataTables dt, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
-        : base(dt, unreal, manager, hooks, "scenemontage", "scene montage") { }
+    public CostumeSceneMontageService(IDataTables dt, IUnrealObjects objects, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
+        : base(dt, objects, unreal, manager, hooks, "scenemontage", "scene montage") { }
 
     protected override string GetPoseValue(Costume costume, string rowName)
     {
@@ -50,8 +51,8 @@ internal sealed class CostumeSceneMontageService : PoseTableServiceBase
 
 internal sealed class CostumeCritCameraService : PoseTableServiceBase
 {
-    public CostumeCritCameraService(IDataTables dt, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
-        : base(dt, unreal, manager, hooks, "crit", "crit camera") { }
+    public CostumeCritCameraService(IDataTables dt, IUnrealObjects objects, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
+        : base(dt, objects, unreal, manager, hooks, "crit", "crit camera") { }
 
     protected override string GetPoseValue(Costume costume, string rowName)
     {
@@ -67,8 +68,8 @@ internal sealed class CostumeCritCameraService : PoseTableServiceBase
 
 internal sealed class CostumeCylinderService : PoseTableServiceBase
 {
-    public CostumeCylinderService(IDataTables dt, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
-        : base(dt, unreal, manager, hooks, "CylinderTable", "cylinder table") { }
+    public CostumeCylinderService(IDataTables dt, IUnrealObjects objects, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
+        : base(dt, objects, unreal, manager, hooks, "CylinderTable", "cylinder table") { }
 
     protected override string GetPoseValue(Costume costume, string rowName)
     {
@@ -84,8 +85,8 @@ internal sealed class CostumeCylinderService : PoseTableServiceBase
 
 internal sealed class CostumeVisualTableService : PoseTableServiceBase
 {
-    public CostumeVisualTableService(IDataTables dt, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
-        : base(dt, unreal, manager, hooks, "VisualTable", "visual table") { }
+    public CostumeVisualTableService(IDataTables dt, IUnrealObjects objects, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
+        : base(dt, objects, unreal, manager, hooks, "VisualTable", "visual table") { }
 
     protected override string GetPoseValue(Costume costume, string rowName)
     {
