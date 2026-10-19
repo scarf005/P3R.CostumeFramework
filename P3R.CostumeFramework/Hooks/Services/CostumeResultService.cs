@@ -1,5 +1,6 @@
 using P3R.CostumeFramework.Costumes.Models;
 using P3R.CostumeFramework.Hooks.Models;
+using IUnrealObjects = UE.Toolkit.Interfaces.IUnrealObjects;
 using Unreal.ObjectsEmitter.Interfaces;
 using Unreal.ObjectsEmitter.Interfaces.Types;
 
@@ -12,36 +13,23 @@ internal sealed unsafe class CostumeResultService
     private readonly IUnreal unreal;
     private readonly CostumeManager manager;
 
-    private readonly List<DataTable<FBtlResultSequence>> tables = new();
-    private readonly Dictionary<DataTable<FBtlResultSequence>, Dictionary<string, FBtlResultSequence>> vanilla = new();
+    private readonly LiveDataTables<FBtlResultSequence> tables;
 
     private int loadCount;
 
-    public CostumeResultService(IDataTables dt, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
+    public CostumeResultService(IDataTables dt, IUnrealObjects objects, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
     {
         this.unreal = unreal;
         this.manager = manager;
 
-        dt.FindDataTable<FBtlResultSequence>(TableName, this.OnTableLoaded);
+        this.tables = new(dt, objects, TableName, this.OnTableLoaded);
         hooks.OnCostumeChanged += _ => this.ApplyAll();
     }
 
     private void OnTableLoaded(DataTable<FBtlResultSequence> loaded)
     {
-        if (!this.tables.Contains(loaded))
-        {
-            this.tables.Add(loaded);
-        }
-
-        var snapshot = new Dictionary<string, FBtlResultSequence>();
-        foreach (var row in loaded.Rows)
-        {
-            snapshot[row.Name] = *row.Self;
-        }
-        this.vanilla[loaded] = snapshot;
-
         Log.Information(
-            $"Result LS table loaded #{++this.loadCount}: {snapshot.Count} rows " +
+            $"Result LS table loaded #{++this.loadCount}: {loaded.Rows.Length} rows " +
             $"[{string.Join(", ", loaded.Rows.Select(r => r.Name))}]");
 
         this.ApplyAll();
@@ -49,27 +37,22 @@ internal sealed unsafe class CostumeResultService
 
     private void ApplyAll()
     {
-        foreach (var table in this.tables)
+        this.tables.ForEach((table, vanilla) =>
         {
-            this.RestoreVanilla(table);
+            RestoreVanilla(table, vanilla);
 
             foreach (var costume in this.manager.GetCurrentCostumes())
             {
                 this.Apply(table, costume);
             }
-        }
+        });
     }
 
-    private void RestoreVanilla(DataTable<FBtlResultSequence> table)
+    private static void RestoreVanilla(DataTable<FBtlResultSequence> table, IReadOnlyDictionary<string, FBtlResultSequence> vanilla)
     {
-        if (!this.vanilla.TryGetValue(table, out var snapshot))
-        {
-            return;
-        }
-
         foreach (var row in table.Rows)
         {
-            if (snapshot.TryGetValue(row.Name, out var original))
+            if (vanilla.TryGetValue(row.Name, out var original))
             {
                 *row.Self = original;
                 row.Self->Sequencer.baseObj.baseObj.WeakPtr = new();

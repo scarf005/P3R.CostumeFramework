@@ -69,11 +69,11 @@ internal unsafe class CostumeService
         this.itemCountHook = new(registry);
         this.costumeNameHook = new(uobjs, unreal, registry);
         this.costumeHeadPanel = new(this.costumeManager, toolkitMemory, toolkitObjects, toolkitSpawning, assetLoader);
-        this.theurgiaService = new(dt, unreal, this.costumeManager, this.costumeHooks);
-        this.theurgiaService = new(dt, unreal, this.costumeManager, this.costumeHooks);
-        this.resultService = new(dt, unreal, this.costumeManager, this.costumeHooks);
+        this.theurgiaService = new(dt, toolkitObjects, unreal, this.costumeManager, this.costumeHooks);
+        this.theurgiaService = new(dt, toolkitObjects, unreal, this.costumeManager, this.costumeHooks);
+        this.resultService = new(dt, toolkitObjects, unreal, this.costumeManager, this.costumeHooks);
         this.faceAnimService = new(uobjs, this.costumeManager, this.costumeHooks);
-        this.alloutSequencerService = new(dt, unreal, this.costumeManager, this.costumeHooks);
+        this.alloutSequencerService = new(dt, toolkitObjects, unreal, this.costumeManager, this.costumeHooks);
         this.cameraService = new(dt, toolkitObjects, this.costumeManager, this.costumeHooks);
 
         this.costumeHooks.OnCostumeChanged += costume =>

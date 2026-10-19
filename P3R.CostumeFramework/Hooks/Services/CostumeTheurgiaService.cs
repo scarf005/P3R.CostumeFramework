@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Xml.Linq;
 using P3R.CostumeFramework.Costumes.Models;
 using P3R.CostumeFramework.Hooks.Models;
+using IUnrealObjects = UE.Toolkit.Interfaces.IUnrealObjects;
 using Unreal.ObjectsEmitter.Interfaces;
 using Unreal.ObjectsEmitter.Interfaces.Types;
 
@@ -13,63 +14,50 @@ internal sealed unsafe class CostumeTheurgiaService
     private readonly IUnreal unreal;
     private readonly CostumeManager manager;
 
-    private DataTable<FBtlTheurgiaSeq>? table;
-
-    // Grab the original table  
-    private readonly Dictionary<string, FBtlTheurgiaSeq> vanilla = new();
+    private readonly LiveDataTables<FBtlTheurgiaSeq> tables;
 
     // Cache :glool:
     private readonly Dictionary<string, List<TheurgiaItem>> fileCache = new(StringComparer.OrdinalIgnoreCase);
 
-    public CostumeTheurgiaService(IDataTables dt, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
+    public CostumeTheurgiaService(IDataTables dt, IUnrealObjects objects, IUnreal unreal, CostumeManager manager, CostumeHooks hooks)
     {
         this.unreal = unreal;
         this.manager = manager;
 
-        dt.FindDataTable<FBtlTheurgiaSeq>(TableName, this.OnTableLoaded);
+        this.tables = new(dt, objects, TableName, this.OnTableLoaded);
         hooks.OnCostumeChanged += _ => this.ApplyAll();
     }
 
     private void OnTableLoaded(DataTable<FBtlTheurgiaSeq> loaded)
     {
-        this.table = loaded;
-
-        this.vanilla.Clear();
-        foreach (var row in loaded.Rows)
-        {
-            this.vanilla[row.Name] = *row.Self;
-        }
-
-        Log.Information($"Theurgia table loaded: snapshotted {this.vanilla.Count} vanilla rows.");
+        Log.Information($"Theurgia table loaded: snapshotted {loaded.Rows.Length} vanilla rows.");
         this.ApplyAll();
     }
 
     private void ApplyAll()
     {
-        if (this.table == null)
+        this.tables.ForEach((table, vanilla) =>
         {
-            return;
-        }
+            RestoreVanilla(table, vanilla);
 
-        this.RestoreVanilla();
-
-        foreach (var costume in this.manager.GetCurrentCostumes())
-        {
-            foreach (var file in costume.TheurgiaFiles)
+            foreach (var costume in this.manager.GetCurrentCostumes())
             {
-                foreach (var item in this.GetItems(file))
+                foreach (var file in costume.TheurgiaFiles)
                 {
-                    this.ApplyItem(costume, item);
+                    foreach (var item in this.GetItems(file))
+                    {
+                        this.ApplyItem(table, costume, item);
+                    }
                 }
             }
-        }
+        });
     }
 
-    private void RestoreVanilla()
+    private static void RestoreVanilla(DataTable<FBtlTheurgiaSeq> table, IReadOnlyDictionary<string, FBtlTheurgiaSeq> vanilla)
     {
-        foreach (var row in this.table!.Rows)
+        foreach (var row in table.Rows)
         {
-            if (this.vanilla.TryGetValue(row.Name, out var original))
+            if (vanilla.TryGetValue(row.Name, out var original))
             {
                 *row.Self = original;
                 // It crashes on soft object references if I don't do this so
@@ -78,9 +66,9 @@ internal sealed unsafe class CostumeTheurgiaService
         }
     }
 
-    private void ApplyItem(Costume costume, TheurgiaItem item)
+    private void ApplyItem(DataTable<FBtlTheurgiaSeq> table, Costume costume, TheurgiaItem item)
     {
-        var row = this.table!.Rows.FirstOrDefault(x => x.Name == item.RowId);
+        var row = table.Rows.FirstOrDefault(x => x.Name == item.RowId);
         if (row == null)
         {
             Log.Warning($"Theurgia row not found: {item.RowId} (from {costume.Character} || {costume.Name}).");
