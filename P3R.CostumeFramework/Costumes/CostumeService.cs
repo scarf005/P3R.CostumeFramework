@@ -74,7 +74,7 @@ internal unsafe class CostumeService
         this.resultService = new(dt, unreal, this.costumeManager, this.costumeHooks);
         this.faceAnimService = new(uobjs, this.costumeManager, this.costumeHooks);
         this.alloutSequencerService = new(dt, unreal, this.costumeManager, this.costumeHooks);
-        this.cameraService = new(dt, this.costumeManager, this.costumeHooks);
+        this.cameraService = new(dt, toolkitObjects, this.costumeManager, this.costumeHooks);
 
         this.costumeHooks.OnCostumeChanged += costume =>
         {

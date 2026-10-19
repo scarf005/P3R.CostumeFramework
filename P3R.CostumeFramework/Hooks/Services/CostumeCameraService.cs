@@ -3,6 +3,7 @@ using System.Xml.Linq;
 using P3R.CostumeFramework.Costumes;
 using P3R.CostumeFramework.Costumes.Models;
 using P3R.CostumeFramework.Hooks.Models;
+using IUnrealObjects = UE.Toolkit.Interfaces.IUnrealObjects;
 using Unreal.ObjectsEmitter.Interfaces;
 using Unreal.ObjectsEmitter.Interfaces.Types;
 
@@ -23,18 +24,18 @@ internal sealed unsafe class CostumeCameraService
 
     private readonly Dictionary<string, CameraOverride> fileCache = new(StringComparer.OrdinalIgnoreCase);
 
-    public CostumeCameraService(IDataTables dt, CostumeManager manager, CostumeHooks hooks)
+    public CostumeCameraService(IDataTables dt, IUnrealObjects objects, CostumeManager manager, CostumeHooks hooks)
     {
         this.manager = manager;
 
-        this.itemCamera = new(dt, "DT_BtlCommandItemCameraTable", this.ApplyAll);
-        this.skillCamera = new(dt, "DT_BtlCommandSkillCameraTable", this.ApplyAll);
-        this.theurgiaCamera = new(dt, "DT_BtlCommandTheurgiaCameraTable", this.ApplyAll);
-        this.theurgiaNoUseCamera = new(dt, "DT_BtlCommandTheurgiaNoUseCameraTable", this.ApplyAll);
+        this.itemCamera = new(dt, objects, "DT_BtlCommandItemCameraTable", this.ApplyAll);
+        this.skillCamera = new(dt, objects, "DT_BtlCommandSkillCameraTable", this.ApplyAll);
+        this.theurgiaCamera = new(dt, objects, "DT_BtlCommandTheurgiaCameraTable", this.ApplyAll);
+        this.theurgiaNoUseCamera = new(dt, objects, "DT_BtlCommandTheurgiaNoUseCameraTable", this.ApplyAll);
 
-        this.kiraOffset = new(dt, "DT_BtlTheurgiaKiraOffset", this.ApplyAll);
-        this.lookat = new(dt, "DT_BtlTheurgiaLookat", this.ApplyAll);
-        this.lookatNoUse = new(dt, "DT_BtlTheurgiaLookatNoUse", this.ApplyAll);
+        this.kiraOffset = new(dt, objects, "DT_BtlTheurgiaKiraOffset", this.ApplyAll);
+        this.lookat = new(dt, objects, "DT_BtlTheurgiaLookat", this.ApplyAll);
+        this.lookatNoUse = new(dt, objects, "DT_BtlTheurgiaLookatNoUse", this.ApplyAll);
 
         hooks.OnCostumeChanged += _ => this.ApplyAll();
     }
@@ -236,62 +237,41 @@ internal sealed unsafe class CostumeCameraService
 
     private sealed unsafe class OverlayTable<TRow> where TRow : unmanaged
     {
-        private readonly string name;
-        private readonly List<DataTable<TRow>> tables = new();
-        private readonly Dictionary<DataTable<TRow>, Dictionary<string, TRow>> vanilla = new();
+        private readonly LiveDataTables<TRow> tables;
 
-        public OverlayTable(IDataTables dt, string name, Action onLoaded)
+        public OverlayTable(IDataTables dt, IUnrealObjects objects, string name, Action onLoaded)
         {
-            this.name = name;
-
-            dt.FindDataTable<TRow>(name, loaded =>
+            this.tables = new(dt, objects, name, loaded =>
             {
-                if (!this.tables.Contains(loaded))
-                {
-                    this.tables.Add(loaded);
-                }
-
-                var snapshot = new Dictionary<string, TRow>(StringComparer.OrdinalIgnoreCase);
-                foreach (var row in loaded.Rows)
-                {
-                    snapshot[row.Name] = *row.Self;
-                }
-
-                this.vanilla[loaded] = snapshot;
-                Log.Information($"Camera table loaded: {this.name} ({snapshot.Count} rows).");
+                Log.Information($"Camera table loaded: {name} ({loaded.Rows.Length} rows).");
                 onLoaded();
             });
         }
 
         public void RestoreVanilla()
         {
-            foreach (var table in this.tables)
+            this.tables.ForEach((table, vanilla) =>
             {
-                if (!this.vanilla.TryGetValue(table, out var snapshot))
-                {
-                    continue;
-                }
-
                 foreach (var row in table.Rows)
                 {
-                    if (snapshot.TryGetValue(row.Name, out var original))
+                    if (vanilla.TryGetValue(row.Name, out var original))
                     {
                         *row.Self = original;
                     }
                 }
-            }
+            });
         }
 
         public void Apply(string rowName, Action<nint> apply)
         {
-            foreach (var table in this.tables)
+            this.tables.ForEach((table, _) =>
             {
                 var row = table.Rows.FirstOrDefault(x => x.Name.Equals(rowName, StringComparison.OrdinalIgnoreCase));
                 if (row != null)
                 {
                     apply((nint)row.Self);
                 }
-            }
+            });
         }
     }
 }
